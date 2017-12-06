@@ -1,1 +1,3 @@
-Learning GAN From Scratch
+# Learning GAN From Scratch
+
+update soon
