@@ -75,7 +75,7 @@ tf.summary.scalar('G_loss', G_loss)
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
-merged = tf.summary.merge_all()
+merged = tf.summary.merge_all() # 定义summary写入文件操作
 summary_writer = tf.summary.FileWriter('../logs/', sess.graph)
 
 plt.ion()  # something about continuous plotting
@@ -83,9 +83,19 @@ for step in range(epoch_num):
     print(step)
     artist_paintings = artist_works()  # real painting from artist
     G_ideas = np.random.randn(BATCH_SIZE, N_IDEAS)
-    G_paintings, pa0, Dl = sess.run([G_out, prob_artist0, D_loss, train_D, train_G],
-                                    # train and get results
-                                    {G_in: G_ideas, real_art: artist_paintings})[: 3]
+    if step % 100 != 0:
+        G_paintings, pa0, Dl = sess.run([G_out, prob_artist0, D_loss, train_D, train_G],
+                                        # train and get results
+                                        {G_in: G_ideas, real_art: artist_paintings})[: 3]
+    else:
+        # 配置运行时需要记录的信息
+        run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        run_metadata = tf.RunMetadata()
+        G_paintings, pa0, Dl = sess.run([G_out, prob_artist0, D_loss, train_D, train_G],
+                                        # train and get results
+                                        {G_in: G_ideas, real_art: artist_paintings}, options=run_options,
+                                        run_metadata=run_metadata)[: 3]
+        summary_writer.add_run_metadata(run_metadata, 'step%03d' % step)
 
     if step % 50 == 0:  # plotting
         summary_result = sess.run(merged, {G_in: G_ideas, real_art: artist_paintings})
