@@ -75,7 +75,7 @@ tf.summary.scalar('G_loss', G_loss)
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
-merged = tf.summary.merge_all() # 定义summary写入文件操作
+merged = tf.summary.merge_all()  # 定义summary写入文件操作
 summary_writer = tf.summary.FileWriter('../logs/', sess.graph)
 
 plt.ion()  # something about continuous plotting
@@ -84,6 +84,8 @@ for step in range(epoch_num):
     artist_paintings = artist_works()  # real painting from artist
     G_ideas = np.random.randn(BATCH_SIZE, N_IDEAS)
     if step % 100 != 0:
+        # G_paintings:  art work by Generater
+        # prob_artist0: probability that the real art work is made by artist
         G_paintings, pa0, Dl = sess.run([G_out, prob_artist0, D_loss, train_D, train_G],
                                         # train and get results
                                         {G_in: G_ideas, real_art: artist_paintings})[: 3]
