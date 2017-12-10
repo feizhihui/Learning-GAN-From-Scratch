@@ -76,7 +76,7 @@ sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
 merged = tf.summary.merge_all()  # 定义summary写入文件操作
-summary_writer = tf.summary.FileWriter('../logs/', sess.graph)
+summary_writer = tf.summary.FileWriter('logs/', sess.graph)
 
 plt.ion()  # something about continuous plotting
 for step in range(epoch_num):
