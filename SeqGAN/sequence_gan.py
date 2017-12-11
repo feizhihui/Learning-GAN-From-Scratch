@@ -87,11 +87,12 @@ def main():
     random.seed(SEED)
     np.random.seed(SEED)
     assert START_TOKEN == 0
-    # 定义Gen_Data_loader, 专门读取真实样本集
+    # 定义gen_data_loader, 专门读取真实样本集
     gen_data_loader = Gen_Data_loader(BATCH_SIZE)
-    #
+    # 定义gen_data_loader, 专门读取验证样本集
     likelihood_data_loader = Gen_Data_loader(BATCH_SIZE)  # For testing
     vocab_size = 5000
+    # 生成混合数据
     dis_data_loader = Dis_dataloader(BATCH_SIZE)
     # 定义生成模型
     generator = Generator(vocab_size, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH, START_TOKEN)
@@ -123,10 +124,13 @@ def main():
     print('Start pre-training...')
     log.write('pre-training...\n')
     for epoch in range(PRE_EPOCH_NUM):
+        # 训练生成模型
         loss = pre_train_epoch(sess, generator, gen_data_loader)
         if epoch % 5 == 0:
+            # 使用生成模型生成数据写入eval_file
             generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file)
             likelihood_data_loader.create_batches(eval_file)
+            # 用oracle模型测试生成数据
             test_loss = target_loss(sess, target_lstm, likelihood_data_loader)
             print('pre-train epoch ', epoch, 'test_loss ', test_loss)
             buffer = 'epoch:\t' + str(epoch) + '\tnll:\t' + str(test_loss) + '\n'
@@ -141,6 +145,8 @@ def main():
             dis_data_loader.reset_pointer()
             for it in range(dis_data_loader.num_batch):
                 x_batch, y_batch = dis_data_loader.next_batch()
+                print("From dis_data_loader x_batch: ", x_batch.shape)
+                print("From dis_data_loader y_batch:", y_batch.shape)
                 feed = {
                     discriminator.input_x: x_batch,
                     discriminator.input_y: y_batch,

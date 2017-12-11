@@ -58,6 +58,8 @@ class Dis_dataloader():
         # Generate labels
         positive_labels = [[0, 1] for _ in positive_examples]
         negative_labels = [[1, 0] for _ in negative_examples]
+        print("positive samples:", len(positive_labels))
+        print("negative samples:", len(negative_examples))
         self.labels = np.concatenate([positive_labels, negative_labels], 0)
 
         # Shuffle the data
@@ -74,7 +76,6 @@ class Dis_dataloader():
 
         self.pointer = 0
 
-
     def next_batch(self):
         ret = self.sentences_batches[self.pointer], self.labels_batches[self.pointer]
         self.pointer = (self.pointer + 1) % self.num_batch
@@ -82,4 +83,3 @@ class Dis_dataloader():
 
     def reset_pointer(self):
         self.pointer = 0
-
