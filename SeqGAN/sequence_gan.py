@@ -119,6 +119,7 @@ def main():
     generate_samples(sess, target_lstm, BATCH_SIZE, generated_num, positive_file)
     gen_data_loader.create_batches(positive_file)
 
+    print('begin to record save/experiment-log.txt')
     log = open('save/experiment-log.txt', 'w')
     #  pre-train generator
     print('Start pre-training...')
