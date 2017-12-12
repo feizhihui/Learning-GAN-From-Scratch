@@ -11,7 +11,7 @@ from target_lstm import TARGET_LSTM
 import pickle
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 #########################################################################################
 #  Generator  Hyper-parameters
@@ -122,7 +122,7 @@ def main():
     print('begin to record save/experiment-log.txt')
     log = open('save/experiment-log.txt', 'w')
     #  pre-train generator
-    print('Start pre-training...')
+    print('Start pre-training generator...')
     log.write('pre-training...\n')
     for epoch in range(PRE_EPOCH_NUM):
         # 训练生成模型
@@ -155,6 +155,7 @@ def main():
                 }
                 _ = sess.run(discriminator.train_op, feed)
 
+    print('define a  rollout object!')
     rollout = ROLLOUT(generator, 0.8)
 
     print('#########################################################################')
@@ -164,6 +165,8 @@ def main():
         # Train the generator for one step
         for it in range(1):
             samples = generator.generate(sess)
+            print('start a rollout and get reward from discriminator(rollout number is 16)...')
+            print('rollout samples shape is', samples.shape)
             rewards = rollout.get_reward(sess, samples, 16, discriminator)
             feed = {generator.x: samples, generator.rewards: rewards}
             _ = sess.run(generator.g_updates, feed_dict=feed)
