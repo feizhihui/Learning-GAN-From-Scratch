@@ -4,7 +4,7 @@ import numpy as np
 
 
 class ROLLOUT(object):
-    # copy generator(lstm) paragrams and set self.lstm=generator to update in future
+    # copy generator(lstm) paragrams and set self.lstm=generator for update in future
     def __init__(self, lstm, update_rate):
         self.lstm = lstm
         self.update_rate = update_rate
