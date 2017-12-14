@@ -122,38 +122,36 @@ def main():
     print('begin to record save/experiment-log.txt')
     log = open('save/experiment-log.txt', 'w')
     #  pre-train generator
-    print('Start pre-training generator...')
-    log.write('pre-training...\n')
-    for epoch in range(PRE_EPOCH_NUM):
-        # 训练生成模型
-        loss = pre_train_epoch(sess, generator, gen_data_loader)
-        if epoch % 5 == 0:
-            # 使用生成模型生成数据写入eval_file
-            generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file)
-            likelihood_data_loader.create_batches(eval_file)
-            # 用oracle模型测试生成数据
-            test_loss = target_loss(sess, target_lstm, likelihood_data_loader)
-            print('pre-train epoch ', epoch, 'test_loss ', test_loss)
-            buffer = 'epoch:\t' + str(epoch) + '\tnll:\t' + str(test_loss) + '\n'
-            log.write(buffer)
-
-    print('Start pre-training discriminator...')
-    # Train 3 epoch on the generated data and do this for 50 times
-    for _ in range(50):
-        generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file)
-        dis_data_loader.load_train_data(positive_file, negative_file)
-        for _ in range(3):
-            dis_data_loader.reset_pointer()
-            for it in range(dis_data_loader.num_batch):
-                x_batch, y_batch = dis_data_loader.next_batch()
-                print("From dis_data_loader x_batch: ", x_batch.shape)
-                print("From dis_data_loader y_batch:", y_batch.shape)
-                feed = {
-                    discriminator.input_x: x_batch,
-                    discriminator.input_y: y_batch,
-                    discriminator.dropout_keep_prob: dis_dropout_keep_prob
-                }
-                _ = sess.run(discriminator.train_op, feed)
+    # print('Start pre-training generator...')
+    # log.write('pre-training...\n')
+    # for epoch in range(PRE_EPOCH_NUM):
+    #     # 训练生成模型
+    #     loss = pre_train_epoch(sess, generator, gen_data_loader)
+    #     if epoch % 5 == 0:
+    #         # 使用生成模型生成数据写入eval_file
+    #         generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file)
+    #         likelihood_data_loader.create_batches(eval_file)
+    #         # 用oracle模型测试生成数据
+    #         test_loss = target_loss(sess, target_lstm, likelihood_data_loader)
+    #         print('pre-train epoch ', epoch, 'test_loss ', test_loss)
+    #         buffer = 'epoch:\t' + str(epoch) + '\tnll:\t' + str(test_loss) + '\n'
+    #         log.write(buffer)
+    #
+    # print('Start pre-training discriminator...')
+    # # Train 3 epoch on the generated data and do this for 50 times
+    # for _ in range(50):
+    #     generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file)
+    #     dis_data_loader.load_train_data(positive_file, negative_file)
+    #     for _ in range(3):
+    #         dis_data_loader.reset_pointer()  # set next_batch pointer to 0
+    #         for it in range(dis_data_loader.num_batch):
+    #             x_batch, y_batch = dis_data_loader.next_batch()
+    #             feed = {
+    #                 discriminator.input_x: x_batch,
+    #                 discriminator.input_y: y_batch,
+    #                 discriminator.dropout_keep_prob: dis_dropout_keep_prob
+    #             }
+    #             _ = sess.run(discriminator.train_op, feed)
 
     print('define a  rollout object!')
     rollout = ROLLOUT(generator, 0.8)
@@ -163,10 +161,12 @@ def main():
     log.write('adversarial training...\n')
     for total_batch in range(TOTAL_BATCH):
         # Train the generator for one step
+        print('begin to train generator with rollout policy')
         for it in range(1):
             samples = generator.generate(sess)
             print('start a rollout and get reward from discriminator(rollout number is 16)...')
             print('rollout samples shape is', samples.shape)
+            print(samples[:5])
             rewards = rollout.get_reward(sess, samples, 16, discriminator)
             feed = {generator.x: samples, generator.rewards: rewards}
             _ = sess.run(generator.g_updates, feed_dict=feed)
@@ -180,12 +180,16 @@ def main():
             print('total_batch: ', total_batch, 'test_loss: ', test_loss)
             log.write(buffer)
 
-        # Update roll-out parameters
+        # Update roll-out parameters using exponentially weighted averages beta=0.8
         rollout.update_params()
 
         # Train the discriminator
+        print('begin to train discriminator with positive and negative samples')
         for _ in range(5):
+            print('generate  %d negative samples from generator and write in %s' % (
+                int(generated_num / BATCH_SIZE) * BATCH_SIZE, negative_file))
             generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file)
+            print('load pos and neg samples and shuffle and bootstrap')
             dis_data_loader.load_train_data(positive_file, negative_file)
 
             for _ in range(3):
